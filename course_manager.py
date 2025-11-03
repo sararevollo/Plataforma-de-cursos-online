@@ -127,3 +127,64 @@ class CourseManager:
             raise CourseValidationError(
                 f"Categoría inválida. Debe ser una de: {Course.VALID_CATEGORIES}"
             )
+
+	def create_course(
+        self,
+        course_id: str,
+        title: str,
+        description: str,
+        instructor_id: str,
+        price: float = 0.0,
+        level: str = 'principiante',
+        category: str = 'programacion'
+    ) -> Course:
+        """
+        Crea un nuevo curso con validación completa.
+        
+        Args:
+            course_id: ID único del curso
+            title: Título del curso (mínimo 10 caracteres)
+            description: Descripción (mínimo 50 caracteres)
+            instructor_id: ID del instructor
+            price: Precio del curso (debe ser >= 0)
+            level: Nivel de dificultad
+            category: Categoría del curso
+            
+        Returns:
+            Course: Objeto curso creado
+            
+        Raises:
+            CourseValidationError: Si los datos no son válidos
+        """
+        try:
+            # Validar que el curso no exista
+            if course_id in self.courses:
+                raise CourseValidationError(
+                    f"El curso con ID {course_id} ya existe"
+                )
+            
+            # Validar datos de entrada
+            self._validate_course_data(
+                title, description, price, level, category
+            )
+            
+            # Crear el curso
+            new_course = Course(
+                course_id=course_id,
+                title=title,
+                description=description,
+                instructor_id=instructor_id,
+                price=price,
+                level=level.lower(),
+                category=category.lower()
+            )
+            
+            # Almacenar el curso
+            self.courses[course_id] = new_course
+            
+            logger.info(f"Curso creado exitosamente: {course_id}")
+            return new_course
+            
+        except Exception as e:
+            logger.error(f"Error al crear curso: {str(e)}")
+            raise
