@@ -188,3 +188,69 @@ class CourseManager:
         except Exception as e:
             logger.error(f"Error al crear curso: {str(e)}")
             raise
+
+	def get_course(self, course_id: str) -> Optional[Course]:
+        """
+        Obtiene un curso por su ID.
+        
+        Args:
+            course_id: ID del curso a buscar
+            
+        Returns:
+            Course o None si no existe
+        """
+        course = self.courses.get(course_id)
+        if course:
+            logger.info(f"Curso encontrado: {course_id}")
+        else:
+            logger.warning(f"Curso no encontrado: {course_id}")
+        return course
+    
+    def update_course(self, course_id: str, **kwargs) -> Course:
+        """
+        Actualiza un curso existente.
+        
+        Args:
+            course_id: ID del curso a actualizar
+            **kwargs: Campos a actualizar
+            
+        Returns:
+            Course actualizado
+            
+        Raises:
+            CourseValidationError: Si el curso no existe
+        """
+        course = self.get_course(course_id)
+        if not course:
+            raise CourseValidationError(
+                f"Curso {course_id} no encontrado"
+            )
+        
+        allowed_fields = ['title', 'description', 'price', 'level', 'category']
+        
+        for field, value in kwargs.items():
+            if field in allowed_fields:
+                setattr(course, field, value)
+        
+        course.updated_at = datetime.now()
+        logger.info(f"Curso actualizado: {course_id}")
+        
+        return course
+    
+    def delete_course(self, course_id: str) -> bool:
+        """
+        Elimina un curso del sistema.
+        
+        Args:
+            course_id: ID del curso a eliminar
+            
+        Returns:
+            bool: True si se eliminó, False si no existía
+        """
+        if course_id in self.courses:
+            del self.courses[course_id]
+            logger.info(f"Curso eliminado: {course_id}")
+            return True
+        
+        logger.warning(f"Intento de eliminar curso inexistente: {course_id}")
+        return False
