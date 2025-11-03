@@ -74,3 +74,56 @@ class Course:
             'rating': self.rating,
             'total_reviews': self.total_reviews
         }
+
+class CourseManager:
+    """
+    Gestiona operaciones CRUD y lógica de negocio para cursos.
+    Implementa principios de código limpio y responsabilidad única.
+    """
+    
+    def __init__(self):
+        """Inicializa el gestor con almacenamiento en memoria"""
+        self.courses: Dict[str, Course] = {}
+        logger.info("CourseManager inicializado correctamente")
+    
+    def _validate_course_data(
+        self,
+        title: str,
+        description: str,
+        price: float,
+        level: str,
+        category: str
+    ) -> None:
+        """
+        Valida los datos del curso según reglas de negocio.
+        Función privada para mantener código limpio.
+        """
+        # Validar título
+        if not title or len(title.strip()) < 10:
+            raise CourseValidationError(
+                "El título debe tener al menos 10 caracteres"
+            )
+        
+        # Validar descripción
+        if not description or len(description.strip()) < 50:
+            raise CourseValidationError(
+                "La descripción debe tener al menos 50 caracteres"
+            )
+        
+        # Validar precio
+        if price < 0:
+            raise CourseValidationError(
+                "El precio no puede ser negativo"
+            )
+        
+        # Validar nivel
+        if level.lower() not in Course.VALID_LEVELS:
+            raise CourseValidationError(
+                f"Nivel inválido. Debe ser uno de: {Course.VALID_LEVELS}"
+            )
+        
+        # Validar categoría
+        if category.lower() not in Course.VALID_CATEGORIES:
+            raise CourseValidationError(
+                f"Categoría inválida. Debe ser una de: {Course.VALID_CATEGORIES}"
+            )
