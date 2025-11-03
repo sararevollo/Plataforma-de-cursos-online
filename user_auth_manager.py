@@ -154,3 +154,58 @@ class SessionManager:
             del self.sessions[token]
             return True
         return False
+
+class UserManager:
+    """Gestiona operaciones CRUD de usuarios."""
+    
+    def __init__(self):
+        self.users: Dict[str, User] = {}
+        self.email_index: Dict[str, str] = {}
+        self.session_manager = SessionManager()
+        logger.info("UserManager inicializado")
+    
+    def register_user(
+        self, email: str, password: str, name: str, user_type: str = 'student'
+    ) -> User:
+        """Registra nuevo usuario."""
+        self._validate_email(email)
+        
+        if email in self.email_index:
+            raise ValidationError(f"Email {email} ya registrado")
+        
+        PasswordManager.validate_password_strength(password)
+        
+        user_id = f"user_{secrets.token_hex(8)}"
+        password_hash = PasswordManager.hash_password(password)
+        
+        new_user = User(user_id, email, password_hash, name, user_type)
+        
+        self.users[user_id] = new_user
+        self.email_index[email] = user_id
+        
+        logger.info(f"Usuario registrado: {email}")
+        return new_user
+    
+    def _validate_email(self, email: str) -> bool:
+        """Valida formato de email."""
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(pattern, email):
+            raise ValidationError("Email inválido")
+        return True
+    
+    def login(self, email: str, password: str) -> Dict:
+        """Autentica usuario."""
+        user_id = self.email_index.get(email)
+        
+        if not user_id:
+            raise AuthenticationError("Credenciales incorrectas")
+        
+        user = self.users[user_id]
+        
+        if not PasswordManager.verify_password(password, user.password_hash):
+            raise AuthenticationError("Credenciales incorrectas")
+        
+        user.last_login = datetime.now()
+        token = self.session_manager.create_session(user_id)
+        
+        return {'token': token, 'user': user.to_dict()}
