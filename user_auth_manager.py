@@ -113,3 +113,44 @@ class PasswordManager:
             raise ValidationError("Debe contener un número")
         
         return True
+
+class SessionManager:
+    """Gestiona sesiones y tokens de autenticación."""
+    
+    def __init__(self, session_duration_hours: int = 24):
+        self.sessions: Dict[str, Dict] = {}
+        self.session_duration = timedelta(hours=session_duration_hours)
+    
+    def create_session(self, user_id: str) -> str:
+        """Crea nueva sesión para usuario."""
+        token = secrets.token_urlsafe(32)
+        expiry = datetime.now() + self.session_duration
+        
+        self.sessions[token] = {
+            'user_id': user_id,
+            'created_at': datetime.now(),
+            'expires_at': expiry
+        }
+        
+        logger.info(f"Sesión creada para {user_id}")
+        return token
+    
+    def validate_session(self, token: str) -> Optional[str]:
+        """Valida token de sesión."""
+        session = self.sessions.get(token)
+        
+        if not session:
+            return None
+        
+        if datetime.now() > session['expires_at']:
+            self.revoke_session(token)
+            return None
+        
+        return session['user_id']
+    
+    def revoke_session(self, token: str) -> bool:
+        """Revoca sesión (logout)."""
+        if token in self.sessions:
+            del self.sessions[token]
+            return True
+        return False
