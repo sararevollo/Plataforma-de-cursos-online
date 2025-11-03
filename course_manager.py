@@ -254,3 +254,67 @@ class CourseManager:
         
         logger.warning(f"Intento de eliminar curso inexistente: {course_id}")
         return False
+
+def search_courses(
+        self,
+        keyword: Optional[str] = None,
+        category: Optional[str] = None,
+        level: Optional[str] = None,
+        max_price: Optional[float] = None
+    ) -> List[Course]:
+        """
+        Busca cursos según criterios especificados.
+        
+        Args:
+            keyword: Palabra clave en título/descripción
+            category: Filtrar por categoría
+            level: Filtrar por nivel
+            max_price: Precio máximo
+            
+        Returns:
+            Lista de cursos que cumplen criterios
+        """
+        results = list(self.courses.values())
+        
+        if keyword:
+            keyword_lower = keyword.lower()
+            results = [
+                c for c in results 
+                if keyword_lower in c.title.lower() 
+                or keyword_lower in c.description.lower()
+            ]
+        
+        if category:
+            results = [c for c in results if c.category == category.lower()]
+        
+        if level:
+            results = [c for c in results if c.level == level.lower()]
+        
+        if max_price is not None:
+            results = [c for c in results if c.price <= max_price]
+        
+        logger.info(f"Búsqueda: {len(results)} cursos encontrados")
+        return results
+    
+    def enroll_student(self, course_id: str, student_id: str) -> bool:
+        """
+        Inscribe un estudiante en un curso.
+        
+        Args:
+            course_id: ID del curso
+            student_id: ID del estudiante
+            
+        Returns:
+            True si se inscribió correctamente
+        """
+        course = self.get_course(course_id)
+        if not course:
+            raise CourseValidationError(f"Curso {course_id} no encontrado")
+        
+        if student_id in course.students_enrolled:
+            logger.warning(f"Estudiante ya inscrito en {course_id}")
+            return False
+        
+        course.students_enrolled.append(student_id)
+        logger.info(f"Estudiante {student_id} inscrito en {course_id}")
+        return True
